@@ -3,20 +3,19 @@ import numpy as np
 import cv2
 
 class FacialDataset:
-	def __init__(csv_file):
+	def __init__(self,csv_file):
 		self.df=pd.read_csv(csv_file)
-		self.image_names=df.iloc[:,0]
-		self.key_pts=df.iloc[:,1:].values.reshape(len(self.df),-1,2)
+		self.image_names=self.df.iloc[:,0]
+		self.key_pts=self.df.iloc[:,1:].values.reshape(len(self.df),-1,2).astype(np.float32)
 		self.images=[]
 		self.rsimg=[]
 		self.rskpt=[]
 
 	def load_images(self,image_path):
-		for nm in self.image_names:
-			img=cv2.imread(image_path+nm)[:,:,:3]
+		for nm,kpt in zip(self.image_names,self.key_pts):
+			img=cv2.imread(image_path+nm)[:,:,:3].astype(np.float32)
 			gray=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-			self.images.append(gray)
-		self.images=np.asarray(self.images)
+			self.images.append(gray.astype(np.float32))
 
 	def resize(self,shape):
 		for im,kpt in zip(self.images,self.key_pts):
@@ -27,5 +26,12 @@ class FacialDataset:
 			kpt[:,1]*=rx
 			self.rsimg.append(im)
 			self.rskpt.append(kpt)
-		self.rsimg=np.asarray(self.rsimg)
-		self.rskpt=np.asarray(self.rskpt)
+		self.rsimg=np.asarray(self.rsimg).astype(np.float32)
+		self.rskpt=np.asarray(self.rskpt).astype(np.float32)
+
+	def normalize(self):
+		self.rsimg/=255
+		self.images/=255
+		self.nkpt=np.empty_like(self.rskpt)
+		self.nkpt[:,:,0]/=self.images.shape[1]
+		self.nkpt[:,:,1]/=self.images.shape[2]
