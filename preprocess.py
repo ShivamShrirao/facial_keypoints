@@ -17,21 +17,20 @@ class FacialDataset:
 			gray=cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 			self.images.append(gray.astype(np.float32))
 
-	def resize(self,shape):
+	def resize(self,shape,chnl=1):
 		for im,kpt in zip(self.images,self.key_pts):
 			x,y=im.shape[:2]
 			im=cv2.resize(im,shape)
 			rx,ry=shape[0]/x,shape[1]/y
 			kpt[:,0]*=ry
 			kpt[:,1]*=rx
-			self.rsimg.append(im)
+			self.rsimg.append(im.reshape(*shape,chnl))
 			self.rskpt.append(kpt)
 		self.rsimg=np.asarray(self.rsimg).astype(np.float32)
 		self.rskpt=np.asarray(self.rskpt).astype(np.float32)
 
 	def normalize(self):
 		self.rsimg/=255
-		self.images/=255
 		self.nkpt=np.empty_like(self.rskpt)
-		self.nkpt[:,:,0]/=self.images.shape[1]
-		self.nkpt[:,:,1]/=self.images.shape[2]
+		self.nkpt[:,:,0]/=self.rsimg.shape[1]
+		self.nkpt[:,:,1]/=self.rsimg.shape[2]
